@@ -59,7 +59,7 @@
 				<key>runningsubtext</key>
 				<string>知乎日报更新中...</string>
 				<key>script</key>
-				<string>python zhihudaily.py 999
+				<string>python zhihudaily.py
 </string>
 				<key>subtext</key>
 				<string>知乎日报是一款拥有千万用户的资讯类客户端</string>

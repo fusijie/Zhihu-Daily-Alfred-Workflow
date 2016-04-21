@@ -12,7 +12,7 @@
 
 ###3.预览
 
-![](preview.jpeg)
+![](preview.png)
 
 ###4.参考
 

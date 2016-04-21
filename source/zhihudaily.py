@@ -1,52 +1,59 @@
 #!/usr/bin/python
 #coding=utf-8
+#
+#
+# Copyright (c) 2016 fusijie <fusijie@vip.qq.com>
+#
+# MIT Licence. See http://opensource.org/licenses/MIT
+#
+# Created on 2016-04-20
+#
 
 import sys
-from workflow import Workflow, ICON_WEB, web
+import os
+import re
+from workflow import Workflow, web
 
-lastest_url = 'http://news-at.zhihu.com/api/4/news/latest'
-theme_url = 'http://news-at.zhihu.com/api/4/theme/'
-
-detail_url_prefix ='http://news-at.zhihu.com/api/4/news/'
+lastest_url = 'http://news-at.zhihu.com/api/2/news/latest'
 default_zhihu_homepage = 'http://daily.zhihu.com/'
+default_thumsnail = 'icon.png'
 
 def _get_stories_url():
     stories_url = lastest_url
-    if category_index == 999: #lastest
-        stories_url = lastest_url
-    else: #theme
-        stories_url = theme_url + str(category_index)
     return stories_url
 
 def _parse_stories():
     data = web.get(_get_stories_url()).json()
-    stories = data['stories']
-    for story in stories:
-        story_title = story['title']
-        story_fake_url = detail_url_prefix + str(story['id'])
-        story_data = web.get(story_fake_url).json()
-        if 'share_url' in story_data:
-            story_real_url = story_data['share_url']
-            story['real_url'] = story_real_url
-        else:
-            story['real_url'] = default_zhihu_homepage
     return data
 
+def _get_story_icon_file_path(wf, dir, img_url):
+    regex = r'\w+\.\w+$'
+    match = re.search(regex, img_url)
+    img_name = match.group(0)
+    img_cache_full_path = wf.cachedir + '/thumbnail_cache/' + dir + '/' + img_name
+    if not os.path.exists(img_cache_full_path):
+        web.get(img_url).save_to_path(img_cache_full_path)
+    if not os.path.exists(img_cache_full_path):
+        return default_thumsnail
+    else:
+        return img_cache_full_path
+
 def _get_stories(wf):
-    data = wf.cached_data('zhihu_' + str(category_index), _parse_stories, max_age = 30)
-    stories = data['stories']
+    data = wf.cached_data('zhihu_lastest', _parse_stories, max_age = 30)
+    stories = data['news']
+    stories_date = data['date']
     for story in stories:
         story_title = story['title']
-        story_url = story['real_url']
-        wf.add_item(title = story_title, subtitle = story_url, icon = 'icon.png', arg = story_url, valid = True)
+        story_url = story['share_url']
+        story_thumbnail = story['thumbnail']
+        wf.add_item(title = story_title, subtitle = story_url, icon = _get_story_icon_file_path(wf, stories_date, story_thumbnail), arg = story_url, valid = True)
     wf.send_feedback()
 
-
 def main(wf):
-    global category_index
-    # category_index = sys.argv[1]
-    category_index = 999
-    _get_stories(wf)
+    try:
+        _get_stories(wf)
+    except:
+        pass
 
 if __name__ == '__main__':
     wf = Workflow()
